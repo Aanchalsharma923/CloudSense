@@ -1,0 +1,48 @@
+datasets:
+  rainfall:
+    verified:
+      byte_size_leap: 25495560
+      byte_size_non_leap: 25425900
+      grid_x: 135
+      grid_y: 129
+      resolution: 0.25
+      lat_min: 6.5
+      lat_max: 38.5
+      lon_min: 66.5
+      lon_max: 100.0
+      missing_value: -999.0
+      endianness: "little"
+      record_markers: "none"
+    inferred: {}
+
+  max_temp:
+    verified:
+      byte_size_leap: 1406904
+      byte_size_non_leap: 1403060
+      grid_x: 31
+      grid_y: 31
+      resolution: 1.0
+      lat_min: 7.5
+      lat_max: 37.5
+      lon_min: 67.5
+      lon_max: 97.5
+      missing_value: 99.9
+      endianness: "little"
+      record_markers: "none"
+    inferred: {}
+
+  min_temp:
+    verified:
+      byte_size_leap: 1406904
+      byte_size_non_leap: 1403060
+      grid_x: 31
+      grid_y: 31
+      resolution: 1.0
+      lat_min: 7.5
+      lat_max: 37.5
+      lon_min: 67.5
+      lon_max: 97.5
+      missing_value: 99.9
+      endianness: "little"
+      record_markers: "none"
+    inferred: {}
