@@ -17,15 +17,26 @@ def test_dirs(tmp_path):
     return dirs
 
 def get_pipeline(test_dirs):
+    from src.ingestion.source import MockIMDProvider
     return IngestionPipeline(
         manifest_path=test_dirs["manifest"],
         staging_dir=test_dirs["staging"],
         raw_dir=test_dirs["raw"],
         state_dir=test_dirs["state"],
-        processed_dir=test_dirs["processed"]
+        processed_dir=test_dirs["processed"],
+        rainfall_provider=MockIMDProvider(historical_archive_dir=test_dirs["processed"])
     )
 
-def test_successful_ingestion(test_dirs):
+@patch("src.ingestion.pipeline.OperationalIMDProvider")
+def test_successful_ingestion(mock_temp_provider_cls, test_dirs):
+    # Make the mock temp provider behave like the old MockIMDProvider
+    from src.ingestion.source import MockIMDProvider
+    real_mock = MockIMDProvider(historical_archive_dir=test_dirs["processed"])
+    
+    mock_instance = mock_temp_provider_cls.return_value
+    mock_instance.download_tmax.side_effect = real_mock.download_tmax
+    mock_instance.download_tmin.side_effect = real_mock.download_tmin
+    
     pipeline = get_pipeline(test_dirs)
     date = "2021-06-01"
     
@@ -46,7 +57,12 @@ def test_successful_ingestion(test_dirs):
     assert pd.Timestamp(date) in ds.time.values
     ds.close()
 
-def test_missing_data_rollback(test_dirs):
+@patch("src.ingestion.pipeline.OperationalIMDProvider")
+def test_missing_data_rollback(mock_temp_provider_cls, test_dirs):
+    mock_instance = mock_temp_provider_cls.return_value
+    mock_instance.download_tmax.return_value = False
+    mock_instance.download_tmin.return_value = False
+    
     pipeline = get_pipeline(test_dirs)
     date = "2099-01-01"
     
@@ -59,7 +75,15 @@ def test_missing_data_rollback(test_dirs):
     entries = pipeline.manifest_manager.read_manifest()
     assert len(entries) == 0
 
-def test_idempotent_ingestion(test_dirs):
+@patch("src.ingestion.pipeline.OperationalIMDProvider")
+def test_idempotent_ingestion(mock_temp_provider_cls, test_dirs):
+    from src.ingestion.source import MockIMDProvider
+    real_mock = MockIMDProvider(historical_archive_dir=test_dirs["processed"])
+    
+    mock_instance = mock_temp_provider_cls.return_value
+    mock_instance.download_tmax.side_effect = real_mock.download_tmax
+    mock_instance.download_tmin.side_effect = real_mock.download_tmin
+    
     pipeline = get_pipeline(test_dirs)
     date = "2021-06-01"
     
@@ -77,7 +101,15 @@ def test_idempotent_ingestion(test_dirs):
     assert len(ds.time) == 1
     ds.close()
 
-def test_get_latest_valid_t(test_dirs):
+@patch("src.ingestion.pipeline.OperationalIMDProvider")
+def test_get_latest_valid_t(mock_temp_provider_cls, test_dirs):
+    from src.ingestion.source import MockIMDProvider
+    real_mock = MockIMDProvider(historical_archive_dir=test_dirs["processed"])
+    
+    mock_instance = mock_temp_provider_cls.return_value
+    mock_instance.download_tmax.side_effect = real_mock.download_tmax
+    mock_instance.download_tmin.side_effect = real_mock.download_tmin
+    
     pipeline = get_pipeline(test_dirs)
     assert pipeline.get_latest_valid_t() is None
     

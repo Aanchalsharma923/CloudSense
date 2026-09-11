@@ -6,15 +6,19 @@ from typing import List, Optional
 from src.ingestion.models import ManifestEntry
 from src.ingestion.manifest import ManifestManager
 from src.ingestion.source import MockIMDProvider
+from src.ingestion.operational_imd_provider import OperationalIMDProvider
+from src.ingestion.operational_imd_rainfall_provider import OperationalIMDRainfallProvider
 from src.ingestion.validator import IMDValidator
 from src.ingestion.state_store import StateStore
 
 class IngestionPipeline:
     def __init__(self, manifest_path="data/raw/manifest.json", 
                  staging_dir="data/staging", raw_dir="data/raw", 
-                 state_dir="data/state", processed_dir="data/processed"):
+                 state_dir="data/state", processed_dir="data/processed",
+                 rainfall_provider=None, temp_provider=None):
         self.manifest_manager = ManifestManager(manifest_path=manifest_path)
-        self.provider = MockIMDProvider(historical_archive_dir=processed_dir)
+        self.rainfall_provider = rainfall_provider or OperationalIMDRainfallProvider()
+        self.temp_provider = temp_provider or OperationalIMDProvider()
         self.validator = IMDValidator()
         self.state_store = StateStore(state_dir=state_dir, processed_dir=processed_dir)
         self.staging_dir = staging_dir
@@ -51,13 +55,13 @@ class IngestionPipeline:
         """
         # Step 1: Staging & Validation
         rain_path = self._ingest_variable(
-            "rainfall", date, self.provider.download_rainfall, self.validator.validate_rainfall)
+            "rainfall", date, self.rainfall_provider.download_rainfall, self.validator.validate_rainfall)
             
         tmax_path = self._ingest_variable(
-            "tmax", date, self.provider.download_tmax, lambda p: self.validator.validate_temperature(p, 'tmax'))
+            "tmax", date, self.temp_provider.download_tmax, lambda p: self.validator.validate_temperature(p, 'tmax'))
             
         tmin_path = self._ingest_variable(
-            "tmin", date, self.provider.download_tmin, lambda p: self.validator.validate_temperature(p, 'tmin'))
+            "tmin", date, self.temp_provider.download_tmin, lambda p: self.validator.validate_temperature(p, 'tmin'))
             
         # Step 2: Atomic cross-variable check
         if not (rain_path and tmax_path and tmin_path):

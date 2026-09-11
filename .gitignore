@@ -45,6 +45,7 @@ data/raw/*
 data/staging/*
 data/state/*
 data/processed/*
+data/operational_test/*
 !data/processed/.gitkeep
 !data/raw/.gitkeep
 !data/staging/.gitkeep
